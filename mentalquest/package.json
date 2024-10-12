@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start-api": "cd backend && flask run --no-debugger",
+    "start-api": "cd backend && flask run --no-debugger"
   },
   "dependencies": {
     "body-parser": "^1.20.3",
