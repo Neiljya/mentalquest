@@ -1,105 +1,102 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './css/Goals.css';
 
+interface Message {
+  sender: 'user' | 'bot';
+  text: string;
+}
+
 const Goals: React.FC = () => {
-  const questions = [
-    "“Have you been feeling overwhelmed, stressed, or anxious about something in particular?”",
-    "“Have you noticed any changes in your routine or behavior, like sleep, appetite, or energy levels?”",
-    "“Have there been any recent events or changes in your life that have been difficult to deal with?”",
-    "“Have you been having any thoughts that have been hard to shake or that keep coming back?”",
-    "“Have you been feeling disconnected from others, or do you feel lonely?”",
-    "“Do you feel physically exhausted, even if you’re not doing much?”",
-    "“Are there any ways you’ve been dealing with stress that you feel aren’t helping or might be making things worse?”",
-    "“How do you feel about the future? Do things seem manageable or overwhelming?”",
-    // Optional follow-up questions
-    "“Can you tell me more about that?”",
-    "“How long have you been feeling this way?”",
-    "“What do you think would make things easier or help you feel better?”",
-  ];
+  const [conversation, setConversation] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState('');
+  const chatboxRef = useRef<HTMLDivElement>(null);
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [responseText, setResponseText] = useState('');
+  const sendMessage = async () => {
+    const messageText = inputText.trim();
+    if (messageText === '') return;
 
-  const moveToNextQuestion = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      alert(
-        'Thank you for sharing. Remember, you can take a break or stop whenever you need.'
-      );
-      setCurrentQuestionIndex(0);
+    // Add user message to conversation
+    const newUserMessage: Message = { sender: 'user', text: messageText };
+    setConversation((prev) => [...prev, newUserMessage]);
+
+    // Scroll to bottom after adding message
+    scrollToBottom();
+
+    // Send message to Flask backend
+    try {
+      const response = await fetch('http://localhost:5000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_input: messageText }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const newBotMessage: Message = { sender: 'bot', text: data.bot_response };
+        setConversation((prev) => [...prev, newBotMessage]);
+        // Scroll to bottom after receiving bot response
+        scrollToBottom();
+      } else {
+        console.error('Error:', data.error);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+
+    setInputText('');
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      sendMessage();
     }
   };
 
-  const moveToPrevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
+  const scrollToBottom = () => {
+    if (chatboxRef.current) {
+      chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
     }
   };
 
-  const submitResponse = () => {
-    alert(`Response submitted: ${responseText}`);
-
-    fetch("/api/insert", {
-        method: 'POST', 
-        mode: 'cors',
-        headers: {
-            'Content-Type': 'application/json', 
-        },
-        body: JSON.stringify({ user_input: responseText, prompt: questions[currentQuestionIndex] }), 
-    })
-    .then(res => {
-        if (!res.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return res.json();
-    })
-    .then(data => {
-        console.log(data);
-    })
-    .catch(err => console.log(err.message));
-
-    setResponseText(''); 
-};
+  const finishTalking = () => {
+    // Handle the finish talking action here, if needed.
+    // Since tasks are handled elsewhere, we might redirect or show a message.
+    alert('Thank you for chatting! You can end the session or continue whenever you like.');
+  };
 
   return (
     <div className="goals-main-container">
       <div className="goals-container">
-        <header>
-          <h1>Reflection Questions</h1>
-        </header>
-
-        <div className="goals-question-container">
-          <p className="goals-question">{questions[currentQuestionIndex]}</p>
-          <div className="goals-response">
-            <textarea
-              className="goals-textbox"
-              rows={4}
-              placeholder="Type your response here..."
-              value={responseText}
-              onChange={(e) => setResponseText(e.target.value)}
-            ></textarea>
-            <div className="goals-buttons">
-              <button
-                className="goals-button"
-                onClick={moveToPrevQuestion}
-                disabled={currentQuestionIndex === 0}
-              >
-                Previous Question
-              </button>
-              <button className="goals-button" onClick={moveToNextQuestion}>
-                Next Question
-              </button>
+        <h1>Chat</h1>
+        <div className="chatbox" id="chatbox" ref={chatboxRef}>
+          {conversation.map((message, index) => (
+            <div key={index} className={`message ${message.sender}`}>
+              {message.text}
             </div>
-          </div>
+          ))}
+        </div>
+
+        <div className="input-container">
+          <input
+            type="text"
+            id="message-input"
+            className="message-input"
+            placeholder="Type your message"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyPress={handleKeyPress}
+          />
+          <button className="send-btn" onClick={sendMessage}>
+            Send
+          </button>
         </div>
       </div>
 
-      <div className="goals-submit-button-container">
-        <button className="goals-button" onClick={submitResponse}>
-          Submit Response
-        </button>
-      </div>
+      <button className="finished-btn" onClick={finishTalking}>
+        Finished Talking
+      </button>
     </div>
   );
 };

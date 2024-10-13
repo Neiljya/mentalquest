@@ -27,7 +27,7 @@ const Home: React.FC = () => {
   };
 
   renderCalendar();
-  
+
   useEffect(() => {
     if (profile) {
       updateXpBar();
@@ -108,7 +108,6 @@ const Home: React.FC = () => {
             <button className="calendar-button" onClick={handleNextMonth}>&gt;</button>
           </div>
           <div className="calendar-body" id="calendar-body">
-            {/* Calendar days will be dynamically generated here */}
           </div>
         </div>
         <div className="motivation">

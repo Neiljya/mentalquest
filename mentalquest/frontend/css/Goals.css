@@ -7,10 +7,23 @@
   --goals-button-text: rgba(255, 255, 255, 0.911);
 }
 
+body {
+  font-family: "Roboto", sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.light-mode {
+  background-color: var(--goals-background-dark);
+  color: var(--goals-text-dark);
+}
+
 .goals-main-container {
   font-family: "Open Sans", sans-serif;
   margin: 0;
   padding: 0;
+  width: 500px;
   color: var(--goals-text-dark);
   align-items: center;
   justify-content: center;
@@ -19,120 +32,93 @@
 }
 
 .goals-container {
-  max-width: 900px;
-  min-height: 50vh;
+  max-width: 600px;
   margin: 20px auto;
   padding: 20px;
-  border-radius: 20px;
-  box-shadow: 30px 0 500px #000000;
-  background: linear-gradient(135deg, #505050, #1a1a1a);
-  color: var(--goals-text-dark);
-  animation: bobbing 4s ease-in-out infinite;
-}
-
-@keyframes bobbing {
-  0%,
-  10% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
-.goals-container header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .goals-container h1 {
-  font-size: 2.5rem;
-  margin: 0;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: var(--goals-primary-color);
+  text-align: center;
 }
 
-.goals-question-container {
-  box-sizing: border-box;
-  min-width: 800px;
-  max-width: 800px;
-  margin: 10px 0;
+.chatbox {
+  width: 80%;
+  align-items: center;
+
+  height: 300px;
+  border: 1px solid rgb(63, 61, 61);
+  border-radius: 10px;
   padding: 15px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
+  overflow-y: auto;
+  background-color: rgb(39, 38, 38);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.goals-question {
-  font-size: 1.2rem;
-  color: var(--goals-text-dark);
-  margin: 10px 0;
-  font-weight: bold;
-  white-space: normal;
+.message {
+  max-width: 80%;
+  padding: 10px;
+  border-radius: 10px;
   word-wrap: break-word;
 }
 
-.goals-response {
+.message.user {
+  background-color: #e0e0e0;
+  align-self: flex-start;
+}
+
+.message.bot {
+  background-color: #bbdefb;
+  align-self: flex-end;
+}
+
+.input-container {
   display: flex;
-  flex-direction: column;
-  width: 100%;
-  color: black;
+  margin-top: 10px;
+  gap: 5px;
 }
 
-.goals-textbox {
-  width: calc(100% - 20px);
-  padding: 15px;
-  margin: 10px auto;
-  border: none;
-  border-radius: 8px;
-  resize: none;
-  font-size: 1rem;
-  background-color: #f9f9f9;
-  box-shadow: inset 0px 4px 6px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s;
-  color: black;
+.message-input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
-.goals-textbox:focus {
-  background-color: #fff;
-  outline: none;
-}
-
-.goals-buttons {
-  margin-top: 20px;
-}
-
-.goals-button {
-  margin: 5px;
+.send-btn {
   background-color: var(--goals-secondary-color);
   color: var(--goals-button-text);
   border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.send-btn:hover {
+  background-color: #1769aa;
+}
+
+.finished-btn {
+  display: block;
+  margin: 20px auto;
   padding: 10px 20px;
-  border-radius: 8px;
+  background-color: var(--goals-primary-color);
+  color: var(--goals-button-text);
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
   font-size: 1rem;
   transition: background-color 0.3s;
 }
 
-.goals-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.goals-submit-button-container {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.goals-submit-button-container .goals-button {
-  margin: 5px;
-  background-color: var(--goals-secondary-color);
-  color: var(--goals-button-text);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
+.finished-btn:hover {
+  background-color: #357a38;
 }

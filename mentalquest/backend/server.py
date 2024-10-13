@@ -1,7 +1,8 @@
 import google.generativeai as genai
 import os
 import json
-from flask import Flask, jsonify, request, render_template
+import re
+from flask import Flask, jsonify, request
 from pymongo import MongoClient
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -13,70 +14,148 @@ CORS(app)
 
 # Set API Key
 genai.configure(api_key=os.environ["GEMINI_KEY"])
-# Set model to 1.5-flash
-model = genai.GenerativeModel("gemini-1.5-flash")
 
 # MongoDB Connection
 mongo_uri = os.getenv("DB_URI")
 client = MongoClient(mongo_uri)
 db = client['mentalquest']
-goals = db['goals']
+conversations_collection = db['conversations']
+
+# Separate database or collection for tasks
+# or use client['mentalquest'] if you prefer the same database
+tasks_db = client['mentalquest_tasks']
+tasks_collection = tasks_db['tasks']
+
+defaultSysInstructions = r"You are a personal therapist whose goal is to talk to a user suffering with mental health issues to diagnose their needs. You will be diagnosing them after an initial conversation in which they respond to certain questions. Make sure not to overwhelm the user."
+default_safety_settings = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_NONE",
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+]
+
+default_config = {
+    "temperature": 0.5,
+    "top_p": 0.95,
+    "top_k": 64,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain"
+}
+
+##########################################################
+################### THERAPIST BOT ########################
+##########################################################
+
+
+class TherapistBot:
+    def __init__(self, history=None, system_instruction=defaultSysInstructions, safety_settings=default_safety_settings, generation_config=default_config):
+        if history is None:
+            history = []
+        self.model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            safety_settings=safety_settings,
+            generation_config=generation_config,
+            system_instruction=system_instruction
+        )
+        self.chat_session = self.model.start_chat(history=history)
+
+    def generate_content(self, user_input, update_history=True):
+        response = self.chat_session.send_message(user_input)
+        model_response = response.text
+        if update_history:
+            self.chat_session.history.append(
+                {"role": "user", "parts": [user_input]})
+            self.chat_session.history.append(
+                {"role": "model", "parts": [model_response]})
+        return model_response
+
+    def generate_tasks(self):
+        prompt = r"Based on the prior conversation, generate a list of daily tasks that a user can complete to improve their mental health based on their diagnosis. These tasks will be used in a web app where the patient earns XP for completing tasks daily and levels up. Return the tasks in a JSON array with the format [{\"title\": String, \"xp_reward\": Int, \"completed\": Boolean (default false)}] and say nothing else."
+        return self.generate_content(prompt, update_history=False)
+
+##########################################################
+##########################################################
+###########################################################
+
+
+bot = TherapistBot()
+
 
 @app.route('/')
 def home():
-    return {"message": "Hello World"}  #TODO: get rid of this
+    return jsonify({"message": "Server is running"})
 
-@app.route('/insert', methods=['POST'])
-def insert_data():
-    if request.method == 'POST':
-        data = request.json
-        user_input = data.get('user_input')
-        prompt = data.get('prompt')
+# Handle conversations with the bot
 
-        if user_input:
-            user_data = {"Prompt": prompt,"User Input": user_input}
-            goals.insert_one(user_data)
-            return jsonify({"message": "Data inserted successfully!"})
-        else:
-            return jsonify({"error": "No prompt provided!"}), 400
-    else:
-        return jsonify({"message": "Use POST method to insert data."}), 405
 
-@app.route('/test_mongo', methods=['GET'])
-def test_mongo():
+@app.route('/chat', methods=['POST'])
+def chat():
     try:
-        # Try inserting a simple document to MongoDB
-        result = goals.insert_one({"test": "connection"})
-        return jsonify({"message": "Test document inserted", "id": str(result.inserted_id)})
+        data = request.json
+        user_input = data.get('user_input', '')
+
+        # generate response
+        bot_response = bot.generate_content(user_input)
+
+        # save the conversation to MongoDB
+        conversation_entry = {
+            "user_input": user_input,
+            "bot_response": bot_response
+        }
+        conversations_collection.insert_one(conversation_entry)
+
+        # return the bot response to the frontend
+        return jsonify({"bot_response": bot_response})
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Route to generate mental health tasks and save the response to MongoDB
+
 @app.route('/generate_tasks', methods=['POST'])
 def generate_mental_health_tasks():
     try:
-        # Use a fixed prompt to generate mental health tasks
-        prompt = "Give me a list of small, everyday tasks that can help improve mental health."
-        
-        # Generate content using Gemini AI
-        response = model.generate_content(prompt)
+        # eenerate tasks using the bot's method
+        generated_tasks_str = bot.generate_tasks()
 
-        # Gemini response is saved under the text header
-        generated_content = response.text
-        
-        # Save the prompt and the generated content to MongoDB
-        output_data = {"prompt": prompt, "generated_content": generated_content}
-        goals.insert_one(output_data)
+        # extract JSON from the AI's response
+        json_pattern = r'\[.*\]'
+        match = re.search(json_pattern, generated_tasks_str, re.DOTALL)
+        if match:
+            tasks_json_str = match.group()
+            tasks_list = json.loads(tasks_json_str)
+        else:
+            return jsonify({"error": "Failed to extract JSON from AI response"}), 500
 
-        # Optionally save it to a local JSON file
-        with open("mental_health_tasks.json", "w") as output_file:
-            json.dump(output_data, output_file, indent=4)
-        
-        # Return the generated content to the user
-        return jsonify(output_data)
+        # add default 'completed' field if missing and assign unique IDs
+        for index, task in enumerate(tasks_list):
+            task.setdefault('completed', False)
+            task['id'] = index  # Assign a unique ID
+
+        # save the generated tasks to the separate database or collection
+        result = tasks_collection.insert_many(tasks_list)
+
+        # update tasks_list with '_id' fields as strings
+        for task, oid in zip(tasks_list, result.inserted_ids):
+            task['_id'] = str(oid)
+
+        # return the generated tasks to the frontend
+        return jsonify({"generated_tasks": tasks_list})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
