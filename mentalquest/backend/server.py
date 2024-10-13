@@ -1,13 +1,12 @@
 import google.generativeai as genai
 import os
 import json
-from flask import Flask, jsonify, request, make_response, Blueprint
+from flask import Flask, jsonify, request
 from pymongo import MongoClient
 from flask import Flask
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-# CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 CORS(app)
 
 # Set API Key

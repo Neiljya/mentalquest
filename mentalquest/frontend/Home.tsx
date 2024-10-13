@@ -14,17 +14,17 @@ const Home: React.FC = () => {
         setDarkMode(!darkMode);
     };
 
-    // TODO: Fetch mental health tasks from Flask backend when component mounts
-    const [data, setData] = useState([{}]);
-
+    // This method tests that the flask and react servers work
+    // It requests the members page on the localhost of the flask server,
+    // then returns some text to display in the console of the react frontend
+    // TODO: Get rid of this function, and put useful functionality in the server.py file
     useEffect(() => {
-      fetch("/members", {
+      fetch("/api/members", {
         method: 'GET',
         mode: 'cors',
       })
-          .then(res => res.json())
+          .then(res => res.text())
           .then(data => {
-              setData(data);
               console.log(data);
           })
           .catch(err => setError(err.message));
