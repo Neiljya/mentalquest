@@ -1,9 +1,11 @@
-const express = require('express')
-const cors = require('cors')
-const bodyParser = require('body-parser')
-const router = require('./routes/router')
-const mongoose = require('mongoose')
-require(`dotenv/config`)
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import router from './routes/router.js';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express()
 
@@ -20,8 +22,11 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions))
+
+// use routes in router.js
 app.use('/', router)
 
+// connect to mongodb
 const dbOptions = {useNewUrlParser: true, useUnifiedTopology: true}
 mongoose.connect(process.env.DB_URI, dbOptions)
 .then(() => console.log('Database Connected'))

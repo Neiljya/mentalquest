@@ -1,127 +1,123 @@
-import React, {useState, useEffect} from 'react';
+import React, { useEffect, useState } from 'react';
+import useUserData from './context/useUserData';
 import './css/Home.css';
 
-
 const Home: React.FC = () => {
-    const [darkMode, setDarkMode] = useState(false);
-    const [xp, setXp] = useState(0);
-    const [level, setLevel] = useState(1);
-    const [streak, setStreak] = useState(0);
-    const [date, setDate] = useState(new Date());
+  const { profile, incrementXP } = useUserData();
+  const [date, setDate] = useState(new Date());
 
-    const toggleMode = () => {
-        setDarkMode(!darkMode);
-    };
+  const renderCalendar = () => {
+    const calendarBody = document.getElementById('calendar-body');
+    if (!calendarBody) return;
 
-    useEffect(()=>{
-        updateXpBar();
-    }, [xp, level]);
+    calendarBody.innerHTML = '';
+    const month = date.getMonth();
+    const firstDay = new Date(date.getFullYear(), month, 1).getDay();
+    const daysInMonth = new Date(date.getFullYear(), month + 1, 0).getDate();
 
-    const updateXpBar = () => {
-        const xpBarFill = document.getElementById('xp-bar-fill') as HTMLDivElement;
-        const xpToNextLevel = level * 100;
-        const fillWidth = (xp / xpToNextLevel) * 100;
-        if (xpBarFill) xpBarFill.style.width = `${fillWidth}%`;
-    };
+    // render empty slots for days before the first of the month
+    for (let i = 0; i < firstDay; i++) {
+      calendarBody.innerHTML += `<div class="calendar-day"></div>`;
+    }
 
-    const checkLevelUp = () => {
-        const xpToNextLevel = level * 100;
-        if (xp >= xpToNextLevel) {
-            setLevel(level + 1);
-            setXp(xp - xpToNextLevel);
-            alert(`Congratulations! You've reached ${level + 1}!`)
-        }
-    };
+    // render the days
+    for (let i = 1; i <= daysInMonth; i++) {
+      calendarBody.innerHTML += `<div class="calendar-day">${i}</div>`;
+    }
+  };
 
-    const renderCalendar = () => {
-        const calendarBody = document.getElementById('calendar-body');
-        if (!calendarBody) return;
-
-        calendarBody.innerHTML = '';
-        const month = date.getMonth();
-        const firstDay = new Date(date.getFullYear(), month, 1).getDay();
-        const daysInMonth = new Date(date.getFullYear(), month + 1, 0).getDate();
-
-        for (let i = 0; i < firstDay; i++) {
-            calendarBody.innerHTML += `<div class="calendar-day"></div>`;
-        }
-
-        for (let i = 1; i <= daysInMonth; i++) {
-            calendarBody.innerHTML += `<div class="calendar-day">${i}</div>`;
-        }
-    };
-
-        useEffect(() => {
-            renderCalendar();
-        }, [date]);
-        
-        const handlePrevMonth = () => {
-            setDate(new Date(date.setMonth(date.getMonth() - 1)));
-        };
-        
-        const handleNextMonth = () => {
-            setDate(new Date(date.setMonth(date.getMonth() + 1)));
-        };
-
-    
-
-
-    return (
-        <div className={`container ${darkMode ? 'dark-mode' : 'light-mode'}`}>
-        <header>
-          <h1 className="welcome">Welcome, User!</h1>
-          <div className="toggle-container">
-            <span className="toggle-label">Dark Mode</span>
-            <label className="toggle">
-              <input
-                type="checkbox"
-                checked={darkMode}
-                onChange={toggleMode}
-              />
-              <span className="slider"></span>
-            </label>
-          </div>
-        </header>
+  renderCalendar();
   
-        <div className="stats">
-          <div className="stat-container">
-            <div className="stat">
-              <div className="stat-circle" id="level">{level}</div>
-              <div className="stat-label">Level</div>
-            </div>
-            <div className="stat">
-              <div className="stat-circle" id="xp">{xp}</div>
-              <div className="stat-label">XP</div>
-            </div>
-            <div className="stat">
-              <div className="stat-circle" id="streak">{streak}</div>
-              <div className="stat-label">Day Streak</div>
-            </div>
+  useEffect(() => {
+    if (profile) {
+      updateXpBar();
+    }
+  }, [profile]);
+
+  const updateXpBar = () => {
+
+    if (!profile) return;
+
+    const xpBarFill = document.getElementById('xp-bar-fill') as HTMLDivElement;
+    const xpToNextLevel = profile.level * 100;
+    const fillWidth = (profile.xp / xpToNextLevel) * 100;
+    if (xpBarFill) xpBarFill.style.width = `${fillWidth}%`;
+  };
+
+  const checkLevelUp = () => {
+    if (!profile) return;
+
+    const xpToNextLevel = profile.level * 100;
+    if (profile.xp >= xpToNextLevel) {
+      incrementXP(0);
+      alert(`Congratulations! You've reached level ${profile.level + 1}!`);
+    }
+  };
+
+
+
+  useEffect(() => {
+    renderCalendar();
+  }, [date]);
+
+  const handlePrevMonth = () => {
+    setDate(new Date(date.setMonth(date.getMonth() - 1)));
+  };
+
+  const handleNextMonth = () => {
+    setDate(new Date(date.setMonth(date.getMonth() + 1)));
+  };
+  
+
+
+  if (!profile) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="container">
+      <header>
+        <h1 className="welcome">Welcome, {profile.name}!</h1>
+      </header>
+
+      <div className="stats">
+        <div className="stat-container">
+          <div className="stat">
+            <div className="stat-circle" id="level">{profile.level}</div>
+            <div className="stat-label">Level</div>
           </div>
-          <div className="xp-bar">
-            <div className="xp-bar-fill" id="xp-bar-fill"></div>
+          <div className="stat">
+            <div className="stat-circle" id="xp">{profile.xp}</div>
+            <div className="stat-label">XP</div>
+          </div>
+          <div className="stat">
+            <div className="stat-circle" id="streak">{profile.streak}</div>
+            <div className="stat-label">Streak</div>
           </div>
         </div>
-  
-        <div className="main-content">
-          <div className="calendar">
-            <div className="calendar-header">
-              <button className="calendar-button" onClick={handlePrevMonth}>&lt;</button>
-              <span id="current-month">{date.toLocaleDateString('default', { month: 'long', year: 'numeric' })}</span>
-              <button className="calendar-button" onClick={handleNextMonth}>&gt;</button>
-            </div>
-            <div className="calendar-body" id="calendar-body">
-            </div>
-          </div>
-          <div className="motivation">
-            <div className="quote">"Keep going. Everything you need will come to you at the perfect time."</div>
-            <div className="author">— Anonymous</div>
-          </div>
+        <div className="xp-bar">
+          <div className="xp-bar-fill" id="xp-bar-fill"></div>
         </div>
       </div>
-    );
 
+      <div className="main-content">
+        <div className="calendar">
+          <div className="calendar-header">
+            <button className="calendar-button" onClick={handlePrevMonth}>&lt;</button>
+            <span id="current-month">{date.toLocaleDateString('default', { month: 'long', year: 'numeric' })}</span>
+            <button className="calendar-button" onClick={handleNextMonth}>&gt;</button>
+          </div>
+          <div className="calendar-body" id="calendar-body">
+            {/* Calendar days will be dynamically generated here */}
+          </div>
+        </div>
+        <div className="motivation">
+          <div className="quote">"Keep going. Everything you need will come to you at the perfect time."</div>
+          <div className="author">— Anonymous</div>
+        </div>
+      </div>
+    </div>
+  );
 };
-
 
 export default Home;
