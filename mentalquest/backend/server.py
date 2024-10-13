@@ -26,7 +26,7 @@ conversations_collection = db['conversations']
 tasks_db = client['mentalquest_tasks']
 tasks_collection = tasks_db['tasks']
 
-defaultSysInstructions = r"You are a personal therapist whose goal is to talk to a user suffering with mental health issues to diagnose their needs. You will be diagnosing them and assigning them both interactive and achievable tasks as well as slightly more difficult, proactive tasks for relatively more experience points. These tasks will be assigned after an initial conversation."
+defaultSysInstructions = r"You are a personal therapist whose goal is to talk to a user suffering with mental health issues to diagnose their needs. You will be diagnosing them after an initial conversation. Do not overwhelm the user."
 default_safety_settings = [
     {
         "category": "HARM_CATEGORY_HARASSMENT",
@@ -82,7 +82,7 @@ class TherapistBot:
         return model_response
 
     def generate_tasks(self):
-        prompt = r"Generate outputs to questions by giving them a task list to improve their situation(s). These tasks will be used in a web app where the patient earns XP for completing tasks daily and levels up. Return the tasks in a JSON array with the format [{\"title\": String, \"xp_reward\": Int, \"completed\": Boolean (default false)}] and say nothing else. Generate an amount such that all of them can be completed in a day. Make sure the experience point rewards are multiples of 5. These tasks should be specific to the situation of the user."
+        prompt = r"Generate both interactive and achievable tasks as well as slightly more difficult, proactive tasks for relatively more experience points. These tasks will be used in a web app where the patient earns XP for completing tasks daily and levels up. Return the tasks in a JSON array with the format [{\"title\": String, \"xp_reward\": Int, \"completed\": Boolean (default false)}] and say nothing else. Generate an amount such that all of them can be completed in a day. Make sure the experience point rewards are multiples of 5. These tasks should be specific to the situation of the user."
         return self.generate_content(prompt, update_history=False)
 
 ##########################################################
