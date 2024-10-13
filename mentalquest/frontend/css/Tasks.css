@@ -17,7 +17,6 @@
   border-radius: 15px;
   box-shadow: 5px 0 40px #000000;
   transition: all 0.3s;
-  /* Removed height and width to let content dictate size */
 }
 
 .tasks-page header {
