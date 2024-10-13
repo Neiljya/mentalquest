@@ -26,10 +26,7 @@ conversations_collection = db['conversations']
 tasks_db = client['mentalquest_tasks']
 tasks_collection = tasks_db['tasks']
 
-defaultSysInstructions = "You are a personal therapist whose goal is to talk to a user suffering with mental health issues to diagnose their needs. \
-                      You will be diagnosing them and assigning them both interactive and achievable tasks as \
-                      well as slightly more difficult, proactive tasks for relatively more experience points. These tasks will be assigned \
-                      after an initial conversation."
+defaultSysInstructions = r"You are a personal therapist whose goal is to talk to a user suffering with mental health issues to diagnose their needs. You will be diagnosing them and assigning them both interactive and achievable tasks as well as slightly more difficult, proactive tasks for relatively more experience points. These tasks will be assigned after an initial conversation."
 default_safety_settings = [
     {
         "category": "HARM_CATEGORY_HARASSMENT",
