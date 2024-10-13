@@ -1,6 +1,5 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import './css/Home.css';
-
 
 const Home: React.FC = () => {
     const [darkMode, setDarkMode] = useState(false);
@@ -8,12 +7,30 @@ const Home: React.FC = () => {
     const [level, setLevel] = useState(1);
     const [streak, setStreak] = useState(0);
     const [date, setDate] = useState(new Date());
+    const [tasks, setTasks] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     const toggleMode = () => {
         setDarkMode(!darkMode);
     };
 
-    useEffect(()=>{
+    // TODO: Fetch mental health tasks from Flask backend when component mounts
+    const [data, setData] = useState([{}]);
+
+    useEffect(() => {
+      fetch("/members", {
+        method: 'GET',
+        mode: 'cors',
+      })
+          .then(res => res.json())
+          .then(data => {
+              setData(data);
+              console.log(data);
+          })
+          .catch(err => setError(err.message));
+  }, []); 
+
+    useEffect(() => {
         updateXpBar();
     }, [xp, level]);
 
@@ -29,7 +46,7 @@ const Home: React.FC = () => {
         if (xp >= xpToNextLevel) {
             setLevel(level + 1);
             setXp(xp - xpToNextLevel);
-            alert(`Congratulations! You've reached ${level + 1}!`)
+            alert(`Congratulations! You've reached ${level + 1}!`);
         }
     };
 
@@ -51,77 +68,76 @@ const Home: React.FC = () => {
         }
     };
 
-        useEffect(() => {
-            renderCalendar();
-        }, [date]);
-        
-        const handlePrevMonth = () => {
-            setDate(new Date(date.setMonth(date.getMonth() - 1)));
-        };
-        
-        const handleNextMonth = () => {
-            setDate(new Date(date.setMonth(date.getMonth() + 1)));
-        };
+    useEffect(() => {
+        renderCalendar();
+    }, [date]);
 
-    
+    const handlePrevMonth = () => {
+        setDate(new Date(date.setMonth(date.getMonth() - 1)));
+    };
 
+    const handleNextMonth = () => {
+        setDate(new Date(date.setMonth(date.getMonth() + 1)));
+    };
 
     return (
         <div className={`container ${darkMode ? 'dark-mode' : 'light-mode'}`}>
-        <header>
-          <h1 className="welcome">Welcome, User!</h1>
-          <div className="toggle-container">
-            <span className="toggle-label">Dark Mode</span>
-            <label className="toggle">
-              <input
-                type="checkbox"
-                checked={darkMode}
-                onChange={toggleMode}
-              />
-              <span className="slider"></span>
-            </label>
-          </div>
-        </header>
-  
-        <div className="stats">
-          <div className="stat-container">
-            <div className="stat">
-              <div className="stat-circle" id="level">{level}</div>
-              <div className="stat-label">Level</div>
+            <header>
+                <h1 className="welcome">Welcome, User!</h1>
+                <div className="toggle-container">
+                    <span className="toggle-label">Dark Mode</span>
+                    <label className="toggle">
+                        <input
+                            type="checkbox"
+                            checked={darkMode}
+                            onChange={toggleMode}
+                        />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+            </header>
+
+            <div className="stats">
+                <div className="stat-container">
+                    <div className="stat">
+                        <div className="stat-circle" id="level">{level}</div>
+                        <div className="stat-label">Level</div>
+                    </div>
+                    <div className="stat">
+                        <div className="stat-circle" id="xp">{xp}</div>
+                        <div className="stat-label">XP</div>
+                    </div>
+                    <div className="stat">
+                        <div className="stat-circle" id="streak">{streak}</div>
+                        <div className="stat-label">Day Streak</div>
+                    </div>
+                </div>
+                <div className="xp-bar">
+                    <div className="xp-bar-fill" id="xp-bar-fill"></div>
+                </div>
             </div>
-            <div className="stat">
-              <div className="stat-circle" id="xp">{xp}</div>
-              <div className="stat-label">XP</div>
+
+            <div className="main-content">
+                <div className="calendar">
+                    <div className="calendar-header">
+                        <button className="calendar-button" onClick={handlePrevMonth}>&lt;</button>
+                        <span id="current-month">{date.toLocaleDateString('default', { month: 'long', year: 'numeric' })}</span>
+                        <button className="calendar-button" onClick={handleNextMonth}>&gt;</button>
+                    </div>
+                    <div className="calendar-body" id="calendar-body"></div>
+                </div>
+                <div className="motivation">
+                    {tasks ? (
+                        <div className="quote">{tasks}</div>
+                    ) : error ? (
+                        <div className="error">Error: {error}</div>
+                    ) : (
+                        <div className="loading">Loading tasks...</div>
+                    )}
+                </div>
             </div>
-            <div className="stat">
-              <div className="stat-circle" id="streak">{streak}</div>
-              <div className="stat-label">Day Streak</div>
-            </div>
-          </div>
-          <div className="xp-bar">
-            <div className="xp-bar-fill" id="xp-bar-fill"></div>
-          </div>
         </div>
-  
-        <div className="main-content">
-          <div className="calendar">
-            <div className="calendar-header">
-              <button className="calendar-button" onClick={handlePrevMonth}>&lt;</button>
-              <span id="current-month">{date.toLocaleDateString('default', { month: 'long', year: 'numeric' })}</span>
-              <button className="calendar-button" onClick={handleNextMonth}>&gt;</button>
-            </div>
-            <div className="calendar-body" id="calendar-body">
-            </div>
-          </div>
-          <div className="motivation">
-            <div className="quote">"Keep going. Everything you need will come to you at the perfect time."</div>
-            <div className="author">— Anonymous</div>
-          </div>
-        </div>
-      </div>
     );
-
 };
-
 
 export default Home;

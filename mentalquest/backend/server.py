@@ -1,11 +1,13 @@
 import google.generativeai as genai
 import os
 import json
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, make_response, Blueprint
 from pymongo import MongoClient
-from flask_cors import CORS
+from flask import Flask
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+# CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 CORS(app)
 
 # Set API Key
@@ -22,7 +24,13 @@ collection = db['recommendations']
 def home():
     return {"message": "Hello World"}  #TODO: get rid of this
 
-@app.route('/insert', methods=['POST'])
+# Test Message
+@app.route("/members", methods=["GET", "POST", "OPTIONS"])
+@cross_origin()  # CORS only for this route
+def members():
+    return jsonify({"members": ["member1", "member2", "member3"]})
+
+@app.route('/insert', methods=['GET'])
 def insert_data():
     data = request.json 
     collection.insert_one(data)
@@ -38,7 +46,7 @@ def test_mongo():
         return jsonify({"error": str(e)}), 500
 
 # Route to generate mental health tasks and save the response to MongoDB
-@app.route('/generate_tasks', methods=['POST'])
+@app.route('/generate_tasks', methods=['GET'])
 def generate_mental_health_tasks():
     try:
         # Use a fixed prompt to generate mental health tasks
@@ -56,9 +64,8 @@ def generate_mental_health_tasks():
         output_data = {"prompt": prompt, "generated_content": generated_content}
         collection.insert_one(output_data)
 
-        # Optionally save it to a local JSON file
-        with open("mental_health_tasks.json", "w") as output_file:
-            json.dump(output_data, output_file, indent=4)
+        # with open("mental_health_tasks.json", "w") as output_file:
+        #     json.dump(output_data, output_file, indent=4)
         
         # Return the generated content to the user
         return jsonify(output_data)
@@ -67,4 +74,4 @@ def generate_mental_health_tasks():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, port=4000)
+    app.run(debug=True, port=5000)
