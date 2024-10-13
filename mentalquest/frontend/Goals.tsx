@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import './css/Goals.css';
 
 const Goals: React.FC = () => {
@@ -39,8 +39,28 @@ const Goals: React.FC = () => {
 
   const submitResponse = () => {
     alert(`Response submitted: ${responseText}`);
-    setResponseText('');
-  };
+
+    fetch("/api/insert", {
+        method: 'POST', 
+        mode: 'cors',
+        headers: {
+            'Content-Type': 'application/json', 
+        },
+        body: JSON.stringify({ user_input: responseText, prompt: questions[currentQuestionIndex] }), 
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return res.json();
+    })
+    .then(data => {
+        console.log(data);
+    })
+    .catch(err => console.log(err.message));
+
+    setResponseText(''); 
+};
 
   return (
     <div className="goals-main-container">

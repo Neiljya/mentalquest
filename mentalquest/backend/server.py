@@ -20,7 +20,7 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 mongo_uri = os.getenv("DB_URI")
 client = MongoClient(mongo_uri)
 db = client['mentalquest']
-collection = db['recommendations']
+goals = db['goals']
 
 @app.route('/')
 def home():
@@ -28,15 +28,25 @@ def home():
 
 @app.route('/insert', methods=['POST'])
 def insert_data():
-    data = request.json 
-    collection.insert_one(data)
-    return jsonify({"message": "Data inserted successfully!"})
+    if request.method == 'POST':
+        data = request.json
+        user_input = data.get('user_input')
+        prompt = data.get('prompt')
+
+        if user_input:
+            user_data = {"Prompt": prompt,"User Input": user_input}
+            goals.insert_one(user_data)
+            return jsonify({"message": "Data inserted successfully!"})
+        else:
+            return jsonify({"error": "No prompt provided!"}), 400
+    else:
+        return jsonify({"message": "Use POST method to insert data."}), 405
 
 @app.route('/test_mongo', methods=['GET'])
 def test_mongo():
     try:
         # Try inserting a simple document to MongoDB
-        result = collection.insert_one({"test": "connection"})
+        result = goals.insert_one({"test": "connection"})
         return jsonify({"message": "Test document inserted", "id": str(result.inserted_id)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -50,15 +60,13 @@ def generate_mental_health_tasks():
         
         # Generate content using Gemini AI
         response = model.generate_content(prompt)
-        # print(response)
-        # print(f"Gemini AI Response: {response.text}")
 
         # Gemini response is saved under the text header
         generated_content = response.text
         
         # Save the prompt and the generated content to MongoDB
         output_data = {"prompt": prompt, "generated_content": generated_content}
-        collection.insert_one(output_data)
+        goals.insert_one(output_data)
 
         # Optionally save it to a local JSON file
         with open("mental_health_tasks.json", "w") as output_file:
@@ -71,4 +79,4 @@ def generate_mental_health_tasks():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, port=4000)
+    app.run(debug=True, port=5000)
