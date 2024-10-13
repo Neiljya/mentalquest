@@ -26,16 +26,14 @@ goals = db['goals']
 def home():
     return {"message": "Hello World"}  #TODO: get rid of this
 
-@app.route('/insert', methods=['GET', 'POST'])
+@app.route('/insert', methods=['POST'])
 def insert_data():
     if request.method == 'POST':
-        # Get prompt from JSON body
         data = request.json
-        user_input = data.get('user_input')  # Extract prompt from request JSON
+        user_input = data.get('user_input')
         prompt = data.get('prompt')
 
         if user_input:
-            # Create the data structure
             user_data = {"Prompt": prompt,"User Input": user_input}
             goals.insert_one(user_data)
             return jsonify({"message": "Data inserted successfully!"})
@@ -54,11 +52,11 @@ def test_mongo():
         return jsonify({"error": str(e)}), 500
 
 # Route to generate mental health tasks and save the response to MongoDB
-@app.route('/generate_tasks', methods=['GET', 'POST'])
-def generate_mental_health_tasks(prompt):
+@app.route('/generate_tasks', methods=['POST'])
+def generate_mental_health_tasks():
     try:
         # Use a fixed prompt to generate mental health tasks
-        # prompt = "Give me a list of small, everyday tasks that can help improve mental health."
+        prompt = "Give me a list of small, everyday tasks that can help improve mental health."
         
         # Generate content using Gemini AI
         response = model.generate_content(prompt)

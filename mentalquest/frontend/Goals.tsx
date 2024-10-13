@@ -41,25 +41,25 @@ const Goals: React.FC = () => {
     alert(`Response submitted: ${responseText}`);
 
     fetch("/api/insert", {
-        method: 'POST', // Use POST method to send data
+        method: 'POST', 
         mode: 'cors',
         headers: {
-            'Content-Type': 'application/json', // Specify the content type
+            'Content-Type': 'application/json', 
         },
-        body: JSON.stringify({ user_input: responseText, prompt: questions[currentQuestionIndex] }), // Send the prompt as JSON
+        body: JSON.stringify({ user_input: responseText, prompt: questions[currentQuestionIndex] }), 
     })
     .then(res => {
         if (!res.ok) {
             throw new Error('Network response was not ok');
         }
-        return res.json(); // Parse response as JSON
+        return res.json();
     })
     .then(data => {
-        console.log(data); // Log the success message
+        console.log(data);
     })
     .catch(err => console.log(err.message));
 
-    setResponseText(''); // Clear the response text
+    setResponseText(''); 
 };
 
   return (
